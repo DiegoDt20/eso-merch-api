@@ -42,7 +42,8 @@ return [
             'cloud' => env('CLOUDINARY_CLOUD_NAME'),
             'key' => env('CLOUDINARY_KEY', env('CLOUDINARY_API_KEY')),
             'secret' => env('CLOUDINARY_SECRET', env('CLOUDINARY_API_SECRET')),
-            'url' => env('CLOUDINARY_URL'),
+            // Avoid CLOUDINARY_URL here so the adapter always signs requests
+            // using the explicit cloud/key/secret values from Railway.
             'secure' => (bool) env('CLOUDINARY_SECURE', true),
             'prefix' => env('CLOUDINARY_PREFIX'),
         ],
