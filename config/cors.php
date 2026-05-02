@@ -19,9 +19,14 @@ return [
     'allowed_origins' => [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
+        'https://eso-merch-frontend.vercel.app',
     ],
 
-    'allowed_origins_patterns' => [],
+    // Permite los deploys preview de Vercel para este frontend.
+    'allowed_origins_patterns' => [
+        '#^https://eso-merch-frontend-.*\.vercel\.app$#',
+        '#^https://eso-merch-frontend-git-.*\.vercel\.app$#',
+    ],
 
     /*
      * Headers permitidos en las peticiones.
