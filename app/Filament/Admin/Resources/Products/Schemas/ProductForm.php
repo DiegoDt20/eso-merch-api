@@ -88,28 +88,27 @@ class ProductForm
                         ->unique(ignoreRecord: true),
                 ])->columns(2),
 
-            // Sección imágenes
+            // Sección imágenes — usa Cloudinary para persistencia en producción
             Section::make('Imágenes')
                 ->schema([
-                    // Imagen principal del producto
-// Imagen principal del producto
-FileUpload::make('image')
-    ->label('Imagen principal')
-    ->image()
-    ->disk('public')
-    ->directory('products')
-    ->visibility('public')
-    ->fetchFileInformation(false),
+                    // Imagen principal — guardada en Cloudinary
+                    FileUpload::make('image')
+                        ->label('Imagen principal')
+                        ->image()
+                        ->disk('cloudinary')
+                        ->directory('products')
+                        ->visibility('public')
+                        ->fetchFileInformation(false),
 
-// Galería de imágenes adicionales
-FileUpload::make('images')
-    ->label('Galería')
-    ->image()
-    ->multiple()
-    ->disk('public')
-    ->directory('products/gallery')
-    ->visibility('public')
-    ->fetchFileInformation(false),
+                    // Galería de imágenes adicionales — guardada en Cloudinary
+                    FileUpload::make('images')
+                        ->label('Galería')
+                        ->image()
+                        ->multiple()
+                        ->disk('cloudinary')
+                        ->directory('products/gallery')
+                        ->visibility('public')
+                        ->fetchFileInformation(false),
                 ]),
 
             // Sección visibilidad
