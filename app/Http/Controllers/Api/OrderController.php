@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Mail\OrderConfirmationMail;         // Mailable para el email de confirmación
+use App\Mail\OrderConfirmationMail;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\User;                        // Para obtener el admin y enviarle la notificación
-use App\Notifications\NewOrderNotification; // Notificación de nuevo pedido para Filament
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;        // Facade para enviar emails
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -35,7 +35,7 @@ class OrderController extends Controller
 
     /**
      * Crea una nueva orden de compra y descuenta el stock.
-     * Al finalizar envía email al cliente y notificación al admin.
+     * Al finalizar intenta enviar email al cliente y notificación al admin.
      */
     public function store(Request $request)
     {
@@ -57,7 +57,6 @@ class OrderController extends Controller
         foreach ($request->products as $item) {
             $product = Product::findOrFail($item['id']);
 
-            // Si no hay suficiente stock retorna error 422
             if ($product->stock < $item['quantity']) {
                 return response()->json([
                     'message' => "Stock insuficiente para el producto: {$product->name}. Solo quedan {$product->stock} unidades.",
@@ -66,15 +65,14 @@ class OrderController extends Controller
         }
 
         // Busca o crea el cliente con los datos recibidos
-        // updateOrCreate actualiza los datos si el cliente ya existe
         $customer = Customer::updateOrCreate(
-            ['email' => $request->email],  // busca por email
+            ['email' => $request->email],
             [
-                'name'       => $request->name,       // actualiza nombre
-                'phone'      => $request->phone,      // actualiza teléfono
-                'address'    => $request->address,    // actualiza dirección
-                'city'       => $request->city,       // actualiza ciudad
-                'department' => $request->department, // actualiza departamento
+                'name'       => $request->name,
+                'phone'      => $request->phone,
+                'address'    => $request->address,
+                'city'       => $request->city,
+                'department' => $request->department,
             ]
         );
 
@@ -124,18 +122,27 @@ class OrderController extends Controller
         $order->load(['customer', 'products']);
 
         // Envía el email de confirmación al cliente
-        // Contiene: número de orden, productos, precios y dirección de envío
-        Mail::to($request->email)->send(new OrderConfirmationMail($order));
+        // Si falla el mail, la orden igual se confirma
+        try {
+            Mail::to($request->email)->send(new OrderConfirmationMail($order));
+        } catch (\Exception $e) {
+            \Log::error('Error enviando email de confirmación: ' . $e->getMessage());
+        }
 
         // Envía notificación a todos los admins en Filament
-        // Aparece en el ícono de campana del panel de administración
-        User::all()->each(function ($admin) use ($order) {
-            $admin->notify(new NewOrderNotification($order));
-        });
+        // Si falla la notificación, la orden igual se confirma
+        try {
+            User::all()->each(function ($admin) use ($order) {
+                $admin->notify(new NewOrderNotification($order));
+            });
+        } catch (\Exception $e) {
+            \Log::error('Error enviando notificación al admin: ' . $e->getMessage());
+        }
 
         return response()->json([
-            'message' => 'Orden creada correctamente.',
-            'order'   => $order,
+            'message'      => 'Orden creada correctamente.',
+            'order_number' => $order->order_number,
+            'order'        => $order,
         ], 201);
     }
 
