@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Railway sits behind a proxy/load balancer, so Laravel needs to trust
         // forwarded host / proto headers when generating signed URLs.
         $middleware->trustProxies(at: '*');
+
+        // Para rutas API, no redirigir al login sino devolver 401
+        $middleware->redirectGuestsTo(fn() => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Cuando una ruta API no está autenticada, devuelve JSON en lugar de redirigir
